@@ -1,0 +1,68 @@
+.button {
+    -fx-font-family: "Verdana";
+
+    -fx-background-color: white;
+    -fx-border-color: #FFBC03;
+    -fx-border-width:2px;
+    -fx-border-radius:3px;
+    -fx-font-size:10pt;
+    -fx-pref-width:180px;
+}
+
+.button:hover {
+    -fx-background-color: #FFEFC4;
+}
+
+.scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-padding:-7;
+}
+
+.combo-box-base {
+    -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, white;
+    -fx-font-size:10pt;
+    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+    -fx-background-radius: 3px, 3px, 2px, 1px;
+}
+
+.combo-box 
+{
+
+    -fx-font-size:10pt;
+    -fx-pref-width:180px;
+}
+
+.text-field {
+    -fx-font-size:10pt;
+
+}
+
+.text{
+    -fx-font-size:10pt;
+
+}
+
+
+.dialog-pane {
+    -fx-font-size:10pt;
+    -fx-background-color: white;
+    -fx-border-color:#133A65;
+    -fx-border-width: 2 2 2 14 ;
+
+}
+
+
+
+.root {
+    -fx-background-color: white;
+    -fx-border-width:2px;
+    -fx-font-size:11pt;
+    -fx-border-style: solid;
+    -fx-border-color:  #133a65;
+    -fx-border-width: 2 2 2 14;
+}
+
+
+.table-view .table-cell{
+        -fx-font-size:10pt;
+}
