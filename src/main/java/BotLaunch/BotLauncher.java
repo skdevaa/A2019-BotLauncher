@@ -109,6 +109,7 @@ public class BotLauncher extends Application {
 	private String token ;
 
 	private  Duration PROBE_FREQUENCY ;
+
     	
 
 	@Override
@@ -427,6 +428,10 @@ public class BotLauncher extends Application {
 		filter.put("value", this.botFolder);
 		filter.put("field", "path");
 		body.put("filter",filter);
+		JSONObject page = new JSONObject();
+		page.put("offset", "0");
+		page.put("length", "2000");
+		body.put("page",page);
 		String result = POSTRequest(url,this.token,body);
 		if (!result.contains("POST NOT WORKED")) {
 			JSONObject json = new JSONObject(result);
