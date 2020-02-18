@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -99,6 +100,7 @@ public class BotLauncher extends Application {
 	
 	private String botId ;
 	private String deviceId;
+	private String deploymentId;
     
     
     private String cr;
@@ -107,6 +109,7 @@ public class BotLauncher extends Application {
 	private String botFolder;
 	private String user;
 	private String token ;
+	private Integer userID;
 
 	private  Duration PROBE_FREQUENCY ;
 
@@ -273,11 +276,12 @@ public class BotLauncher extends Application {
 
           
      	  authenticate();
+      	  BotUtils.BotMessage botmessage;
      	  
-      	  this.devicescombo = (ComboBox)this.scene.lookup("#device");
+      	/*  this.devicescombo = (ComboBox)this.scene.lookup("#device");
       	  this.devices = new HashMap<String,String>();
       	  ObservableList<String> deviceoptions = FXCollections.observableArrayList();
-      	  BotUtils.BotMessage botmessage;
+
       	  JSONArray devicesJson = getDevices();
       	  if (devicesJson != null) {
       	  devicesJson.forEach(item -> {
@@ -295,7 +299,7 @@ public class BotLauncher extends Application {
       	  	botmessage = new BotMessage(new String("INFORMATION"),new String("Init of device options completed"),new String(now.format(formatter)));
       	  	list.getItems().add(0,botmessage);
       	  };
-    
+    */
 
      	  this.botscombo = (ComboBox)this.scene.lookup("#bot");
      	  this.bots = new HashMap<String,String>();
@@ -335,7 +339,7 @@ public class BotLauncher extends Application {
       	        		  automationJson .forEach(item -> {
       	            	    JSONObject jsonobj = (JSONObject) item;
       	            	    String status = jsonobj.getString("status");
-      	            	    String id = jsonobj.getString("automationId");
+      	            	    String id = jsonobj.getString("deploymentId");
       	            	    String message = jsonobj.getString("message");
       	            	    if (id != null && status != null) {
       	            	    	String automationStatus = getAutomations().get(id);
@@ -344,16 +348,16 @@ public class BotLauncher extends Application {
           	            	    	LocalDateTime now = LocalDateTime.now();
           	            	    	BotMessage botmessage;
       	            	    		if (status.contains("COMPLETED")) {
-                            	        botmessage = new BotMessage( "STOP",new String("Automation ID '"+id+"' : '"+status+"'"),new String(now.format(formatter)));
+                            	        botmessage = new BotMessage( "STOP",new String("Automation '"+id+"' : '"+status+"'"),new String(now.format(formatter)));
       	            				    list.getItems().add(0,botmessage);
         	            				getAutomations().remove(id);
       	            	    		}
           	            	    	if (status.contains("FAILED")) {                           	        
-                            	        botmessage = new BotMessage( "ERROR",new String("Automation ID '"+id+"' : '"+status+"'"),new String(now.format(formatter)));
+                            	        botmessage = new BotMessage( "ERROR",new String("Automation '"+id+"' : '"+status+"'"),new String(now.format(formatter)));
       	            	    			list.getItems().add(0,botmessage);
       	            	    			if (message.length()>0) {
       	            	    				now = LocalDateTime.now();  
-      	            	    				botmessage = new BotMessage(new String("ERROR"),new String("Automation ID '"+id+"' : '"+message.replace("\n", " ").replace("\r", "")+"'"),new String(now.format(formatter)));
+      	            	    				botmessage = new BotMessage(new String("ERROR"),new String("Automation '"+id+"' : '"+message.replace("\n", " ").replace("\r", "")+"'"),new String(now.format(formatter)));
       	            	    				list.getItems().add(0,botmessage);
       	            	    			}
         	            				getAutomations().remove(id);
@@ -403,7 +407,7 @@ public class BotLauncher extends Application {
 		for (Entry<String, String> automation : automations.entrySet()) {
 			JSONObject operand = new JSONObject();
 			operand.put("operator", "eq");
-			operand.put("field","automationId");
+			operand.put("field","deploymentId");
 			operand.put("value", automation.getKey());
 			operands.put(operand);
 		}
@@ -413,6 +417,13 @@ public class BotLauncher extends Application {
 		if (!result.contains("POST NOT WORKED")) {
 			JSONObject json = new JSONObject(result);
 			 statusJson = (JSONArray)json.get("list");
+			 for (int i = 0; i < statusJson.length(); i++) {
+				 JSONObject item = (JSONObject)statusJson.get(i);
+				 if (automations.containsKey(item.getString("deploymentId"))) {
+					 automations.put(item.getString("deploymentId"),item.getString("automationName"));
+				 }
+				
+			}
 		}
 		return statusJson;
 	}
@@ -447,11 +458,12 @@ public class BotLauncher extends Application {
 		URL url = new URL(this.cr+"/v1/authentication");
 		JSONObject body = new JSONObject();
 		body.put("username", this.user);
-		body.put("apiKey", this.apiKey);
+		body.put("apikey", this.apiKey);
 		String result = POSTRequest(url,null,body);
 		if (!result.contains("POST NOT WORKED")) {
 			JSONObject Json = new JSONObject(result);
 			this.token = Json.get("token").toString();
+			this.userID = ((JSONObject)Json.get("user")).getInt("id");
 		
 		}
 	}	 
@@ -459,17 +471,18 @@ public class BotLauncher extends Application {
 	
 	private JSONObject deploy() throws Exception {
 		JSONObject automation = null;
-		if ((this.deviceId != null) && (this.botId != null)) {
-			URL url = new URL(this.cr+"/v2/automations/deploy");
+		if ((this.userID != null) && (this.botId != null)) {
+			URL url = new URL(this.cr+"/v3/automations/deploy");
 			JSONObject body = new JSONObject();
 			body.put("fileId",this.botId);
-			JSONArray deviceIds = new JSONArray();
-			deviceIds.put(this.deviceId);
-			body.put("deviceIds", deviceIds);
+			JSONArray userIds = new JSONArray();
+			userIds.put(this.userID);
+			body.put("runAsUserIds", userIds);
 			String result = POSTRequest(url,this.token,body);
 			if (!result.contains("POST NOT WORKED")) {
 				automation = new JSONObject(result);
 			}
+			
 		}
 
 		return automation;	 
@@ -479,16 +492,19 @@ public class BotLauncher extends Application {
 	 
 	  @FXML
 	  protected  void callAction() throws Exception {			
-	        this.deviceId = this.devices.get(this.devicescombo.getValue().toString());
+	   //     this.deviceId = this.devices.get(this.devicescombo.getValue().toString());
 	        this.botId = this.bots.get(this.botscombo.getValue().toString());
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 	        authenticate();
 	        JSONObject automation = deploy();
+	        this.deploymentId = "";
 	        if (automation != null) {
 	        	LocalDateTime now = LocalDateTime.now(); 
-	          	BotMessage botmessage = new BotMessage(new String("START"),new String("Bot '"+this.botscombo.getValue()+"' with Automation ID '"+automation.getString("automationId")+"' deployed"),new String(now.format(formatter)));
+	        	String deploymentId= automation.getString("deploymentId");
+	        	automations.put(deploymentId, "");
+	        	getAutomationStatus() ;
+	          	BotMessage botmessage = new BotMessage(new String("START"),new String("Automation for Bot '"+this.botscombo.getValue()+"' as '"+automations.get(deploymentId)+"' deployed"),new String(now.format(formatter)));
 				list.getItems().add(0,botmessage);
-				automations.put(automation.getString("automationId"), "Deployed");
 	        }
 
 	  }
@@ -521,7 +537,7 @@ public class BotLauncher extends Application {
 	        }
 
 
-		    postConnection.setRequestProperty("Content-Type", "application/json");
+		    postConnection.setRequestProperty("Content-Type", "application/json;charset=utf-8");
 		    postConnection.setDoOutput(true);
 		    OutputStream os = postConnection.getOutputStream();
 
@@ -543,7 +559,7 @@ public class BotLauncher extends Application {
 
 	        BufferedReader in = new BufferedReader(new InputStreamReader(
 
-	            postConnection.getInputStream()));
+	            postConnection.getInputStream(),StandardCharsets.UTF_8.name()));
 
 	        String inputLine;
 
