@@ -8,7 +8,7 @@
 
 <VBox prefHeight="800.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <GridPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="303.0" prefWidth="411.0">
+      <GridPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="249.0" prefWidth="411.0">
         <columnConstraints>
           <ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" maxWidth="175.0" minWidth="10.0" prefWidth="106.0" />
           <ColumnConstraints fillWidth="false" halignment="CENTER" hgrow="ALWAYS" maxWidth="316.0" minWidth="10.0" prefWidth="265.0" />
@@ -16,18 +16,11 @@
         <rowConstraints>
             <RowConstraints maxHeight="50.0" minHeight="0.0" prefHeight="50.0" valignment="CENTER" vgrow="SOMETIMES" />
           <RowConstraints maxHeight="50.0" minHeight="0.0" prefHeight="50.0" vgrow="SOMETIMES" />
-            <RowConstraints maxHeight="50.0" minHeight="0.0" prefHeight="50.0" vgrow="SOMETIMES" />
             <RowConstraints maxHeight="50.0" minHeight="10.0" prefHeight="50.0" vgrow="SOMETIMES" />
-          <RowConstraints maxHeight="50.0" minHeight="0.0" prefHeight="50.0" vgrow="SOMETIMES" />
           <RowConstraints maxHeight="50.0" minHeight="0.0" prefHeight="50.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <Label text="Bot Name" GridPane.rowIndex="3">
-               <GridPane.margin>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </GridPane.margin>
-            </Label>
-            <Label text="Device Name" GridPane.rowIndex="4">
+            <Label text="Bot Name" GridPane.rowIndex="2">
                <GridPane.margin>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </GridPane.margin>
@@ -37,7 +30,7 @@
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                </GridPane.margin>
             </Label>
-            <Button id="start" mnemonicParsing="false" onAction="#callAction" text="Start" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+            <Button id="start" mnemonicParsing="false" onAction="#callAction" text="Start" GridPane.columnIndex="1" GridPane.rowIndex="3" />
             <Label text="Control Room">
                <GridPane.margin>
                   <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
@@ -45,14 +38,7 @@
             </Label>
             <Text id="cr" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-font-weight: bold;" text="Text" textAlignment="CENTER" wrappingWidth="260.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.hgrow="NEVER" GridPane.valignment="CENTER" GridPane.vgrow="NEVER" />
             <Text id="user" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-font-weight: bold;" text="Text" textAlignment="CENTER" wrappingWidth="260.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <Label text="Folder" GridPane.rowIndex="2">
-               <GridPane.margin>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </GridPane.margin>
-            </Label>
-            <Text id="folder" strokeType="OUTSIDE" strokeWidth="0.0" style="-fx-font-weight: bold;" text="Text" textAlignment="CENTER" wrappingWidth="260.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-            <ComboBox id="bot" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-            <ComboBox id="device" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+            <ComboBox id="bot" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
             <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" GridPane.rowIndex="1" />
          </children>
          <opaqueInsets>
@@ -62,7 +48,7 @@
             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
          </padding>
       </GridPane>
-      <TableView id="logview" prefHeight="504.0" prefWidth="411.0">
+      <TableView id="logview" prefHeight="553.0" prefWidth="411.0">
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>

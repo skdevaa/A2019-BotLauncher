@@ -6,11 +6,13 @@ package BotLaunch;
 
 
 import java.io.BufferedReader;
-
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 
 import java.net.URL;
@@ -20,10 +22,12 @@ import java.nio.file.Paths;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
+import java.util.Arrays;
 import java.util.HashMap;
-
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -86,30 +90,27 @@ public class BotLauncher extends Application {
     private Button start; 
 	private Text crtext;
 	private Text usertext;
-	private Text foldertext;
 
 	private ComboBox botscombo;
-	private ComboBox devicescombo;
 	
 	private TableView<BotMessage> list;
-	private HashMap<String,String> devices;
-	private HashMap<String,String> bots;
+	private List<Object> bots;
 	private HashMap<String,String> automations;
+	private HashMap<String,String> botList;
 	
-	private TextField device;
 	
 	private String botId ;
-	private String deviceId;
 	private String deploymentId;
     
     
     private String cr;
     private Scene scene;
 	private String apiKey;
-	private String botFolder;
 	private String user;
 	private String token ;
 	private Integer userID;
+	private Integer interval;
+
 
 	private  Duration PROBE_FREQUENCY ;
 
@@ -122,15 +123,9 @@ public class BotLauncher extends Application {
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
         this.automations = new HashMap<String,String>();
 		
-		String config = new String(Files.readAllBytes(Paths.get("C://ProgramData//AutomationAnywhere//BotLaunch//launcher.json"))); 
-        JSONObject object = new JSONObject(config);
-        this.cr = object.getString("cr");
-        this.user = object.getString("user");
-        this.apiKey = object.getString("apiKey");
-        this.botFolder = object.getString("botFolder");
-        
-        Integer interval = Integer.parseInt(object.getString("interval"));
-        PROBE_FREQUENCY = Duration.seconds(interval);
+		readLauncherProperties("C://ProgramData//AutomationAnywhere//BotLaunch//launcher.properties");
+
+        PROBE_FREQUENCY = Duration.seconds(this.interval);
 
 		  URL url = Paths.get("/fxml/launchform.fxml").toUri().toURL();
 		  FXMLLoader fxmlloader = new FXMLLoader(getClass().getResource("/fxml/launchform.fxml"));
@@ -164,11 +159,9 @@ public class BotLauncher extends Application {
 	      stage.getIcons().add(new Image(this.getClass().getResourceAsStream("/icons/logo.png")));
           stage.show();
           
-      	  foldertext  = (Text)this.scene.lookup("#folder");
       	  usertext  = (Text)this.scene.lookup("#user");
       	  crtext  = (Text)this.scene.lookup("#cr");
       	  
-          foldertext.setText(this.botFolder);
       	  usertext.setText(this.user);
       	  crtext.setText(this.cr);
           TableColumn<BotMessage, String> statusColumn = new TableColumn<BotMessage,String>();
@@ -278,49 +271,24 @@ public class BotLauncher extends Application {
      	  authenticate();
       	  BotUtils.BotMessage botmessage;
      	  
-      	/*  this.devicescombo = (ComboBox)this.scene.lookup("#device");
-      	  this.devices = new HashMap<String,String>();
-      	  ObservableList<String> deviceoptions = FXCollections.observableArrayList();
-
-      	  JSONArray devicesJson = getDevices();
-      	  if (devicesJson != null) {
-      	  devicesJson.forEach(item -> {
-      	    JSONObject jsonobj = (JSONObject) item;
-      	    if (jsonobj.getString("status").equals("CONNECTED")) {
-      	    	String name = jsonobj.getString("hostName");
-      	    	String id = jsonobj.getString("id");
-      	    	this.devices.put(name, id);
-      	    	deviceoptions.add(name);
-      	    }
-       	 });
-      	  devicescombo.getItems().addAll(deviceoptions);
-      	  devicescombo.getSelectionModel().select(0);
-      	  	LocalDateTime now = LocalDateTime.now();  
-      	  	botmessage = new BotMessage(new String("INFORMATION"),new String("Init of device options completed"),new String(now.format(formatter)));
-      	  	list.getItems().add(0,botmessage);
-      	  };
-    */
 
      	  this.botscombo = (ComboBox)this.scene.lookup("#bot");
-     	  this.bots = new HashMap<String,String>();
+     	  this.botList = new HashMap<String,String>();
 	      ObservableList<String> botsoptions = FXCollections.observableArrayList();
-     	  JSONArray botsJson = getBots();
-      	  if (botsJson != null) {
-     	  botsJson.forEach(item -> {
-     	    JSONObject jsonobj = (JSONObject) item;
-     	    String name = jsonobj.getString("name");
-     	    String id = jsonobj.getString("id");
-     	    if (!name.contains(".png")) {
-     	    	this.bots.put(name, id);
-     	    	botsoptions.add(name);
-     	    }
-      	    });
-     	     botscombo.getItems().addAll(botsoptions);
-     	     botscombo.getSelectionModel().select(0);
-     	    LocalDateTime now = LocalDateTime.now();  
-         	botmessage = new BotMessage(new String("INFORMATION"),new String("Init of bot options completed"),new String(now.format(formatter)));
-  			list.getItems().add(0,botmessage);
-      	  }
+     	  getBots();
+     	  for (Entry<String, String> bot : botList.entrySet()) {
+			String name = (String) bot.getKey();
+	    	System.out.println("BotList "+name);
+   	    	botsoptions.add(name);
+			
+     	  }
+     	 
+     	  botscombo.getItems().addAll(botsoptions);
+     	  botscombo.getSelectionModel().select(0);
+     	  LocalDateTime now = LocalDateTime.now();  
+     	  botmessage = new BotMessage(new String("INFORMATION"),new String("Init of bot options completed"),new String(now.format(formatter)));
+  		  list.getItems().add(0,botmessage);
+      	  
      	  
       	  
       	 Timeline timeline = new Timeline(
@@ -342,28 +310,27 @@ public class BotLauncher extends Application {
       	            	    String id = jsonobj.getString("deploymentId");
       	            	    String message = jsonobj.getString("message");
       	            	    if (id != null && status != null) {
-      	            	    	String automationStatus = getAutomations().get(id);
-      	            	    	if (automationStatus != null) {
+      	            	    	String automationName = automations.get(id);
+      	            	    	if (automationName != null) {
           	            	    	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
           	            	    	LocalDateTime now = LocalDateTime.now();
           	            	    	BotMessage botmessage;
       	            	    		if (status.contains("COMPLETED")) {
-                            	        botmessage = new BotMessage( "STOP",new String("Automation '"+id+"' : '"+status+"'"),new String(now.format(formatter)));
+                            	        botmessage = new BotMessage( "STOP",new String("Automation '"+automationName+"' : '"+status+"'"),new String(now.format(formatter)));
       	            				    list.getItems().add(0,botmessage);
         	            				getAutomations().remove(id);
       	            	    		}
           	            	    	if (status.contains("FAILED")) {                           	        
-                            	        botmessage = new BotMessage( "ERROR",new String("Automation '"+id+"' : '"+status+"'"),new String(now.format(formatter)));
+                            	        botmessage = new BotMessage( "ERROR",new String("Automation '"+automationName+"' : '"+status+"'"),new String(now.format(formatter)));
       	            	    			list.getItems().add(0,botmessage);
       	            	    			if (message.length()>0) {
       	            	    				now = LocalDateTime.now();  
-      	            	    				botmessage = new BotMessage(new String("ERROR"),new String("Automation '"+id+"' : '"+message.replace("\n", " ").replace("\r", "")+"'"),new String(now.format(formatter)));
+      	            	    				botmessage = new BotMessage(new String("ERROR"),new String("Automation '"+automationName+"' : '"+message.replace("\n", " ").replace("\r", "")+"'"),new String(now.format(formatter)));
       	            	    				list.getItems().add(0,botmessage);
       	            	    			}
         	            				getAutomations().remove(id);
       	            	    		}
       	            	    	}
-      	            	    	getAutomations().replace(id,status);
       	            	    }
       	             	 });
       	        	  }
@@ -380,20 +347,7 @@ public class BotLauncher extends Application {
 	
 	
 	
-	
-	private JSONArray getDevices() throws Exception {
 
-		JSONArray devicesJson = null;
-		URL url = new URL(this.cr+"/v2/devices/list");
-		JSONObject body = new JSONObject();
-		String result = POSTRequest(url,this.token,body);
-		if (!result.contains("POST NOT WORKED")) {
-			JSONObject json = new JSONObject(result);
-			 devicesJson = (JSONArray)json.get("list");
-		}
-		return devicesJson;
-	}
-	
 	
 	
 	private JSONArray getAutomationStatus() throws Exception {
@@ -417,38 +371,47 @@ public class BotLauncher extends Application {
 		if (!result.contains("POST NOT WORKED")) {
 			JSONObject json = new JSONObject(result);
 			 statusJson = (JSONArray)json.get("list");
-			 for (int i = 0; i < statusJson.length(); i++) {
-				 JSONObject item = (JSONObject)statusJson.get(i);
-				 if (automations.containsKey(item.getString("deploymentId"))) {
-					 automations.put(item.getString("deploymentId"),item.getString("automationName"));
-				 }
-				
-			}
 		}
+				
 		return statusJson;
 	}
 	
 	
-	private JSONArray getBots() throws Exception {
-
-		JSONArray botsJson = null;
-		URL url = new URL(this.cr+"/v2/repository/file/list");
-		JSONObject body = new JSONObject(); 
-		JSONObject filter = new JSONObject();
-		filter.put("operator", "substring");
-		filter.put("value", this.botFolder);
-		filter.put("field", "path");
-		body.put("filter",filter);
-		JSONObject page = new JSONObject();
-		page.put("offset", "0");
-		page.put("length", "2000");
-		body.put("page",page);
-		String result = POSTRequest(url,this.token,body);
-		if (!result.contains("POST NOT WORKED")) {
-			JSONObject json = new JSONObject(result);
-			botsJson = (JSONArray)json.get("list");
+	private void getBots() throws Exception {
+		for (Iterator iterator = bots.iterator(); iterator.hasNext();) {
+			String botName= (String) iterator.next();
+			System.out.println("Bot Name "+botName);
+			JSONArray botsJson = null;
+			URL url = new URL(this.cr+"/v2/repository/file/list");
+			JSONObject body = new JSONObject(); 
+			JSONObject filter = new JSONObject();
+			filter.put("operator", "eq");
+			filter.put("value", botName);
+			filter.put("field", "name");
+			body.put("filter",filter);
+			JSONObject page = new JSONObject();
+			page.put("offset", "0");
+			page.put("length", "10");
+			body.put("page",page);
+			String result = POSTRequest(url,this.token,body);
+			if (!result.contains("POST NOT WORKED")) {
+				JSONObject json = new JSONObject(result);
+				botsJson = (JSONArray)json.get("list");
+		        botsJson.forEach(item -> {
+		       	    JSONObject jsonobj = (JSONObject) item;
+		       	    String name = jsonobj.getString("name");
+		       	    String id = jsonobj.getString("id");
+		       	    if (!name.contains(".png")) {
+		       			System.out.println("Bot Id "+id);
+		       			System.out.println("Bot Name "+name);
+		       	    	this.botList.put(name, id);
+		       	    }
+		       	    
+		        });
+				
+					
+			}
 		}
-		return botsJson;
 	}
 
 
@@ -469,6 +432,8 @@ public class BotLauncher extends Application {
 	}	 
 	
 	
+
+	
 	private JSONObject deploy() throws Exception {
 		JSONObject automation = null;
 		if ((this.userID != null) && (this.botId != null)) {
@@ -478,9 +443,11 @@ public class BotLauncher extends Application {
 			JSONArray userIds = new JSONArray();
 			userIds.put(this.userID);
 			body.put("runAsUserIds", userIds);
+			body.put("overrideDefaultDevice",false);
 			String result = POSTRequest(url,this.token,body);
 			if (!result.contains("POST NOT WORKED")) {
 				automation = new JSONObject(result);
+		    	System.out.println("Automation"+automation.toString());
 			}
 			
 		}
@@ -492,8 +459,8 @@ public class BotLauncher extends Application {
 	 
 	  @FXML
 	  protected  void callAction() throws Exception {			
-	   //     this.deviceId = this.devices.get(this.devicescombo.getValue().toString());
-	        this.botId = this.bots.get(this.botscombo.getValue().toString());
+	        this.botId = this.botList.get(this.botscombo.getValue().toString());
+	    	System.out.println("Bot Deloy Id"+this.botId);
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 	        authenticate();
 	        JSONObject automation = deploy();
@@ -501,9 +468,9 @@ public class BotLauncher extends Application {
 	        if (automation != null) {
 	        	LocalDateTime now = LocalDateTime.now(); 
 	        	String deploymentId= automation.getString("deploymentId");
-	        	automations.put(deploymentId, "");
+	        	automations.put(deploymentId, this.botscombo.getValue().toString());
 	        	getAutomationStatus() ;
-	          	BotMessage botmessage = new BotMessage(new String("START"),new String("Automation for Bot '"+this.botscombo.getValue()+"' as '"+automations.get(deploymentId)+"' deployed"),new String(now.format(formatter)));
+	          	BotMessage botmessage = new BotMessage(new String("START"),new String("Automation for Bot '"+this.botscombo.getValue().toString()+"' deployed"),new String(now.format(formatter)));
 				list.getItems().add(0,botmessage);
 	        }
 
@@ -514,8 +481,21 @@ public class BotLauncher extends Application {
 	        return this.automations;
 	 }
 	 
+	 private void readLauncherProperties(String filename) throws  Exception {
+	 
+   	  Properties prop = new Properties();
 
-		
+	  prop.load(new FileInputStream(filename));
+
+	  // get value by key
+	  this.cr = prop.getProperty("cr.url");
+	  this.user = prop.getProperty("cr.user");
+	  this.apiKey = prop.getProperty("cr.apikey");
+	  String[] botArray = prop.getProperty("cr.bots").split(",");
+	  this.bots =  Arrays.asList(botArray);
+	  this.interval = Integer.parseInt(prop.getProperty("cr.interval"));
+
+	 }	
     public static void main(String[] args) {
 		        launch(args);
 	}
